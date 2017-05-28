@@ -24,6 +24,7 @@ def connectOpenAPIServer():
     global conn, server
     conn = HTTPConnection(server)
 
+##########################################
 def extractData(strXml):
     from xml.etree import ElementTree
     tree = ElementTree.fromstring(strXml)
@@ -33,12 +34,11 @@ def extractData(strXml):
     for item in itemElements:
         strTitle = item.find("jobSmclNm")
         summary = item.find("jobSum")
-    #    way = item.find("way")
-    #   jobVideo = item.find("jobSum")
+        jobVideo = item.find("jobVideo")
     #    print(strTitle)
 
         if len(strTitle.text) > 0 :
-            return {"Title":strTitle.text,"summary":summary.text}
+            return {"이름 :": strTitle.text, "summary": summary.text, "유투브 링크": ("http:" + jobVideo.text)}
 
 def getData(job):
     global server, regKey, conn
@@ -56,6 +56,81 @@ def getData(job):
     else:
         print("OpenAPI request has been failed!! please retry")
         return None
+
+#####################################
+def ListData(strXml):
+    from xml.etree import ElementTree
+
+    tree = ElementTree.fromstring(strXml)
+    print(strXml)
+
+    # Book 엘리먼트를 가져옵니다.
+    itemElements = tree.getiterator("jobList")  # return list type
+    temp = {}
+    for item in itemElements:
+        strcd = item.find("jobCd")
+        strgb = item.find("jobGb")
+        strNm = item.find("jobNm")
+        #    print(strTitle)
+        temp[strNm.text] = (strcd.text, strgb.text)
+    return temp
+
+
+def PrintJobList(category):
+    global server, regKey, conn
+    if conn == None:
+        connectOpenAPIServer()
+        #authKey = WNJ2ZX96FAX7OEYLSQFRI2VR1HK & returnType = XML & target = JOBCD & srchType = K & keyword = % EA % B5 % 90 % EC % 82 % AC
+        # 교사 = %EA%B5%90%EC%82%AC
+    uri = userURIBuilder(server, authKey=regKey, returnType="XML", target="JOBCD", srchType="K", keyword=str(category))
+    conn.request("GET", uri)
+
+    req = conn.getresponse()
+    print(req.status)
+    if int(req.status) == 200:
+        print("list downloading complete!")
+        return ListData(req.read())
+    else:
+        print("OpenAPI request has been failed!! please retry")
+        return None
+
+    #####################################
+def SearchData(strXml):
+    from xml.etree import ElementTree
+
+    tree = ElementTree.fromstring(strXml)
+    print(strXml)
+
+    # Book 엘리먼트를 가져옵니다.
+    itemElements = tree.getiterator("jobList")  # return list type
+    for item in itemElements:
+        strTitle = item.find("jobSmclNm")
+        summary = item.find("jobSum")
+        jobVideo = item.find("jobVideo")
+        #    print(strTitle)
+
+        if len(strTitle.text) > 0:
+            return {"이름 :": strTitle.text, "summary": summary.text, "유투브 링크": ("http:" + jobVideo.text)}
+
+def NameSearch(temp):
+    global server, regKey, conn
+    if conn == None:
+        connectOpenAPIServer()
+    temp1 = list(temp.values())
+    print(temp1)
+    uri = userURIBuilder(server, authKey=regKey, returnType="XML", target="JOBDTL", jobGb=str(temp1[0][1]), jobCd=str(temp1[0][0]), dtlGb="1")
+    conn.request("GET", uri)
+
+    req = conn.getresponse()
+    print(req.status)
+    if int(req.status) == 200:
+        print("list downloading complete!")
+        return SearchData(req.read())
+    else:
+        print("OpenAPI request has been failed!! please retry")
+        return None
+
+###############################
 
 def checkConnection():
     global conn

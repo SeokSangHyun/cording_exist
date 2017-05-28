@@ -57,7 +57,7 @@ def Add(data):
         if Joblist != None:
             Joblist.appendChild(Joblist)
 
-def PrintJobList(tags):
+def PrintList(tags):
     global JobsDoc
     if not checkDocument():
         return None
