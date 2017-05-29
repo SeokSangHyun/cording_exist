@@ -59,6 +59,7 @@ def getData(job):
 
 #####################################
 def ListData(strXml):
+    global conn
     from xml.etree import ElementTree
 
     tree = ElementTree.fromstring(strXml)
@@ -73,6 +74,8 @@ def ListData(strXml):
         strNm = item.find("jobNm")
         #    print(strTitle)
         temp[strNm.text] = (strcd.text, strgb.text)
+    conn.close()
+    conn = None
     return temp
 
 
@@ -95,7 +98,7 @@ def PrintJobList(category):
         return None
 
     #####################################
-def SearchData(strXml):
+def SerchData(strXml):
     from xml.etree import ElementTree
 
     tree = ElementTree.fromstring(strXml)
@@ -119,16 +122,18 @@ def NameSearch(temp):
     temp1 = list(temp.values())
     print(temp1)
     uri = userURIBuilder(server, authKey=regKey, returnType="XML", target="JOBDTL", jobGb=str(temp1[0][1]), jobCd=str(temp1[0][0]), dtlGb="1")
+    print(uri)
     conn.request("GET", uri)
 
     req = conn.getresponse()
     print(req.status)
     if int(req.status) == 200:
         print("list downloading complete!")
-        return SearchData(req.read())
+        return SerchData(req.read())
     else:
         print("OpenAPI request has been failed!! please retry")
         return None
+
 
 ###############################
 

@@ -18,8 +18,9 @@ def launcherFunction(menu):
             name = input("직업명을 입력 하세요. : ")
             for x in buf:
                 if x == name:
-                    temp = {x : (buf[x][0], buf[x][1])}
-                    NameSearch(temp)
+                    temp = {x: (buf[x][0], buf[x][1])}
+                    buf = NameSearch(temp)
+                    print(buf)
 
     elif menu == 'a':
         str = input("직업번호를 입력하시오.")
