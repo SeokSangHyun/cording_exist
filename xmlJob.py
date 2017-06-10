@@ -4,82 +4,99 @@ from xml.etree import ElementTree
 xmlFD = -1
 JobsDoc = None
 
-#### xml 관련 함수 구현
-def LoadXMLFromFile():
-    fileName = str(input ("please input file name to load :"))
-    global xmlFD, JobsDoc
-    try:
-        xmlFD = open(fileName)
-    except IOError:
-        print ("invalid file name or path")
-    else:
-        try:
-            dom = parse(xmlFD)
-        except Exception:
-            print ("loading fail!!!")
-        else:
-            print ("XML Document loading complete")
-            JobsDoc = dom
-            return dom
-    return None
 
-def Add(data):
+def PrintJobList(tags):
     global JobsDoc
     if not checkDocument():
         return None
 
-    # book 엘리먼트 생성
-    newJob = JobsDoc.createElement('jobSum')
-    newJob.setAttribute('jobSmclNm', data['jobSmclNm'])
-    # Title 엘리먼트 생성
-    titleEle = JobsDoc.createElement('jobSmclNm')
-    # 텍스트 노드 생성
-    titleNode = JobsDoc.createTextNode(data['jobSmclNm'])
-    # 텍스트 노드를 Title 엘리먼트와 연결
-    try:
-        titleEle.appendChild(titleNode)
-    except Exception:
-        print("append child fail- please,check the parent element & node!!!")
-        return None
-    else:
-        titleEle.appendChild(titleNode)
-
-
-
-    # Title 엘리먼트를 Book 엘리먼트와 연결.
-    try:
-        Joblist.appendChild(titleEle)
-        Joblist = JobsDoc.firstChild
-    except Exception:
-        print("append child fail- please,check the parent element & node!!!")
-        return None
-    else:
-        if Joblist != None:
-            Joblist.appendChild(Joblist)
-
-def PrintList(tags):
-    global JobsDoc
-    if not checkDocument():
-        return None
-
-    booklist = JobsDoc.childNodes
-    book = booklist[0].childNodes
-    for item in book:
-        if item.nodeName == "book":
+    joblist = JobsDoc.childNodes
+    job = joblist[0].childNodes
+    for item in job:
+        if item.nodeName == "jobList":
             subitems = item.childNodes
             for atom in subitems:
                 if atom.nodeName in tags:
-                    print("title=", atom.firstChild.nodeValue)
+                    if atom.nodeName == "jobCd":
+                        print("직업 코드:" ,atom.firstChild.nodeValue)
+                    else:
+                        print(atom.firstChild.nodeValue)
+                        print("\n")
 
 
+def SearchJobTitle(keyword):
+    global JobsDoc
+    retlist = []
+    if not checkDocument():
+        return None
 
-def Free():
-    if checkDocument():
-        Doc.unlink()
+    try:
+        tree = ElementTree.fromstring(str(JobsDoc.toxml()))
+    except Exception:
+        print("Element Tree parsing Error : maybe the xml document is not corrected.")
+        return None
+
+    # get Book Element
+    jobElements = tree.getiterator("jobList")  # return list type
+    for item in jobElements:
+        strTitle = item.find("jobNm")
+        strCd = item.find("jobCd")
+        if (strTitle.text.find(keyword) >= 0):
+            retlist.append(strTitle.text)
+            retlist.append(strCd.text)
+
+    for element in retlist:
+        print(element)
+
+def MakeHtmlDoc(jobList):
+    from xml.dom.minidom import getDOMImplementation
+    # get Dom Implementation
+    impl = getDOMImplementation()
+
+    newdoc = impl.createDocument(None, "html", None)  # DOM 객체 생성
+    top_element = newdoc.documentElement
+    header = newdoc.createElement('header')
+    top_element.appendChild(header)
+
+    # Body 엘리먼트 생성.
+    body = newdoc.createElement('body')
+
+    for jobitem in jobList.items():
+        # create bold element
+        b = newdoc.createElement('b')
+        # create text node
+        ibsnText = newdoc.createTextNode(jobitem[0])
+        b.appendChild(ibsnText)
+
+        body.appendChild(b)
+
+        # BR 태그 (엘리먼트) 생성.
+        br = newdoc.createElement('br')
+
+        body.appendChild(br)
+
+        # create title Element
+        p = newdoc.createElement('p')
+        # create text node
+        titleText = newdoc.createTextNode(jobitem[1])
+        p.appendChild(titleText)
+
+        body.appendChild(p)
+        body.appendChild(br)  # line end
+
+    # append Body
+    top_element.appendChild(body)
+
+    return newdoc.toxml()
 
 def checkDocument():
     global JobsDoc
     if JobsDoc == None:
-        print("Error : Document is empty")
         return False
     return True
+
+
+def JobsFree():
+    if checkDocument():
+        JobsDoc.unlink()
+
